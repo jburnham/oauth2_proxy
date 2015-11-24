@@ -235,7 +235,17 @@ func fetchGroupMembers(service *admin.Service, group string) ([]*admin.Member, e
 			return nil, err
 		}
 		for _, member := range r.Members {
-			members = append(members, member)
+			// Flatten groups that are members of this group into the main list of members
+			if member.Type == "GROUP" {
+				membersRecursive, errRecursive := fetchGroupMembers(service, member.Email)
+				if errRecursive == nil {
+					for _, memberRecursive := range membersRecursive {
+						members = append(members, memberRecursive)
+					}
+				}
+			} else {
+				members = append(members, member)
+			}
 		}
 		if r.NextPageToken == "" {
 			break
